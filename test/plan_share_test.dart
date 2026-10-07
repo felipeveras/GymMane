@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gymmane/l10n/l10n.dart';
 import 'package:gymmane/services/plan_share.dart';
 import 'package:gymmane/state/fit_state.dart';
 
@@ -47,6 +48,16 @@ void main() {
       expect(routine.name, 'Empuje');
       expect(routine.exerciseIds.length, 1);
       expect(fit.routineSets(routine, routine.exerciseIds.first), 5);
+    });
+
+    test('importa nombres brasileños aunque la interfaz siga en inglés', () {
+      setAppLanguage('en');
+      final result = fit.importPlan(
+          '{"name":"Peito","exercises":[{"name":"Supino reto com barra","sets":4}]}');
+      expect(result.added, 1);
+      expect(result.missed, isEmpty);
+      expect(fit.routines.single.exerciseIds, ['EIeI8Vf']);
+      expect(fit.routineSets(fit.routines.single, 'EIeI8Vf'), 4);
     });
 
     test('avisa cuando no hay nada que emparejar', () {

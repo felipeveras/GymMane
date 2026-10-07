@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gymmane/catalog/exercise_aliases.dart';
 import 'package:gymmane/catalog/exercise_catalog.dart';
 import 'package:gymmane/models/exercise.dart';
+import 'package:gymmane/l10n/l10n.dart';
 import 'package:gymmane/services/exercise_match.dart';
 
 const _hevyNames = {
@@ -92,6 +93,27 @@ void main() {
         'Dumbbell Standing Overhead Press');
     expect(matchExercise('Shoulder Press (Dumbbell)', kExercises)?.name,
         'Dumbbell Standing Overhead Press');
+  });
+
+  test('Portuguese names and common aliases search and import independent of UI language', () {
+    setAppLanguage('en');
+    expect(searchKey('elevação'), searchKey('elevacao'));
+    expect(_search('elevacao lateral').map((e) => e.id), contains('DsgkuIt'));
+    expect(_search('ELEVAÇÃO LATERAL').map((e) => e.id), contains('DsgkuIt'));
+    expect(_search('triceps corda').map((e) => e.id), contains('rope-tricep-pushdown'));
+    expect(_search('cadeira extensora').map((e) => e.id), contains('leg-extension'));
+    expect(_search('mesa flexora').map((e) => e.id), contains('C5jncD2'));
+    expect(_search('voador').map((e) => e.id), contains('pec-deck'));
+    expect(matchExercise('Supino reto com barra', kExercises)?.id, 'EIeI8Vf');
+    expect(matchExercise('voador', kExercises)?.id, 'pec-deck');
+    expect(matchExercise('mesa flexora', kExercises)?.id, 'C5jncD2');
+    expect(matchExercise('voador', [kExercises.firstWhere((e) => e.id == 'EIeI8Vf')]), isNull);
+
+    final custom = Exercise(
+      id: 'custom-voador', name: 'voador', primary: 'chest', secondary: const [],
+      equipment: 'Other', difficulty: 'Beginner', art: '', steps: const [],
+    );
+    expect(matchExercise('voador', [custom, kExercises.firstWhere((e) => e.id == 'pec-deck')]), custom);
   });
 
   test('an empty search keeps the whole catalog', () {
