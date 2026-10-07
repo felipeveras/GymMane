@@ -1,4 +1,5 @@
 import '../catalog/exercise_aliases.dart';
+import '../l10n/catalog_pt.dart';
 import '../models/exercise.dart';
 
 const _stop = {'the', 'a', 'an', 'with', 'on', 'to', 'and', 'or', 'in', 'for', 'v', 'var'};
@@ -37,7 +38,8 @@ List<String> nameTokens(String raw) {
       .replaceAll(RegExp(r'[ìíîï]'), 'i')
       .replaceAll(RegExp(r'[òóôõö]'), 'o')
       .replaceAll(RegExp(r'[ùúûü]'), 'u')
-      .replaceAll('ñ', 'n');
+      .replaceAll('ñ', 'n')
+      .replaceAll('ç', 'c');
   final out = <String>[];
   for (final part in flat.split(RegExp(r'[^a-z0-9]+'))) {
     if (part.isEmpty || _stop.contains(part)) continue;
@@ -60,6 +62,20 @@ final Map<String, String> _aliasIndex = {
     for (final alias in entry.value) sortedKey(alias): entry.key,
 };
 
+final Map<String, Set<String>> _ptExactIndex = () {
+  final index = <String, Set<String>>{};
+  void add(String value, String id) => index.putIfAbsent(sortedKey(value), () => <String>{}).add(id);
+  for (final entry in kExerciseNamePt.entries) {
+    add(entry.value, entry.key);
+  }
+  for (final entry in kExerciseAliasesPt.entries) {
+    for (final alias in entry.value) {
+      add(alias, entry.key);
+    }
+  }
+  return index;
+}();
+
 typedef ExerciseFilter = bool Function(Exercise);
 
 ExerciseFilter exerciseSearch(String query) {
@@ -74,6 +90,9 @@ ExerciseFilter exerciseSearch(String query) {
     if (key.isEmpty) return false;
     if (_keyOf(e.name).contains(key) || _keyOf(label).contains(key)) return true;
     if (e.aliases.any((a) => _keyOf(a).contains(key))) return true;
+    final ptName = kExerciseNamePt[e.id];
+    if (ptName != null && _keyOf(ptName).contains(key)) return true;
+    if (kExerciseAliasesPt[e.id]?.any((a) => _keyOf(a).contains(key)) ?? false) return true;
     return kExerciseAliases[e.name]?.any((a) => _keyOf(a).contains(key)) ?? false;
   };
 }
@@ -162,6 +181,15 @@ Exercise? matchExercise(String name, Iterable<Exercise> pool) {
   for (final e in pool) {
     final label = exerciseName(e);
     if (label != e.name && _keyOf(label) == key) return e;
+  }
+
+  final portugueseIds = _ptExactIndex[sortedKey(name)];
+  if (portugueseIds != null) {
+    if (portugueseIds.length != 1) return null;
+    for (final e in pool) {
+      if (e.id == portugueseIds.single) return e;
+    }
+    return null;
   }
 
   final q = key.split(' ').toSet();
